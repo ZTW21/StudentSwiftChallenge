@@ -17,7 +17,3 @@ To start using the app, clone the repository to your local machine and open the 
 ## Contribution
 
 Contributions are welcome! If you're interested in contributing, please fork the repository, make your changes, and submit a pull request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
