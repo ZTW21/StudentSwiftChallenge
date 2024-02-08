@@ -4,6 +4,8 @@ struct ContentView: View {
     @State private var showingImagePicker = false
     @State private var inputImage: UIImage?
     @State private var image: Image?
+    @State private var showingActionSheet = false // To track action sheet presentation
+    @State private var sourceType: UIImagePickerController.SourceType = .photoLibrary // To specify source type
     @State private var paletteColors: [SwiftUI.Color] = Array(repeating: SwiftUI.Color.gray, count: 9) // Placeholder colors
     @State private var showingToast = false
     @State private var toastMessage = ""
@@ -15,7 +17,7 @@ struct ContentView: View {
         ZStack {
             VStack {
                 Button(action: {
-                    self.showingImagePicker = true
+                    self.showingActionSheet = true // Show action sheet when button is tapped
                 }) {
                     Text("Select Image")
                         .foregroundColor(.white)
@@ -24,6 +26,19 @@ struct ContentView: View {
                         .clipShape(Capsule())
                 }
                 .padding()
+                .actionSheet(isPresented: $showingActionSheet) { // Action sheet
+                    ActionSheet(title: Text("Select Image"), message: Text("Choose the image source"), buttons: [
+                        .default(Text("Camera")) {
+                            self.sourceType = .camera
+                            self.showingImagePicker = true
+                        },
+                        .default(Text("Photo Library")) {
+                            self.sourceType = .photoLibrary
+                            self.showingImagePicker = true
+                        },
+                        .cancel()
+                    ])
+                }
                 
                 ZStack {
                     Rectangle()
@@ -51,7 +66,7 @@ struct ContentView: View {
                                 lastCopiedColor = copiedColor
                                 showToast(message: "Color copied to clipboard")
                             }
-                            // Check if the current square is one of the corners
+                        // Check if the current square is one of the corners
                             .overlay(
                                 index == 0 || index == 2 || index == 6 || index == 8 ?
                                 RoundedRectangle(cornerRadius: 10)
@@ -92,10 +107,8 @@ struct ContentView: View {
                 .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height * 0.85)
             }
         }
-        
         .sheet(isPresented: $showingImagePicker, onDismiss: loadImage) {
-            ImagePicker(selectedImage: self.$inputImage.unwrap(or: UIImage()))
-            
+            ImagePicker(selectedImage: self.$inputImage, sourceType: self.sourceType) // Pass the source type to ImagePicker
         }
     }
     
@@ -192,18 +205,13 @@ struct ContentView: View {
         UIPasteboard.general.string = hexString
     }
     
-//    func showToast(message: String) {
-//        toastMessage = message
-//        showingToast = true
-//    }
-    
     func showToast(message: String) {
         // Reset the toast state to allow it to be triggered again
         withAnimation {
             showingToast = false
             opacity = 0
         }
-
+        
         // Update the message and make the toast visible
         toastMessage = message
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -211,7 +219,7 @@ struct ContentView: View {
                 showingToast = true
                 opacity = 1
             }
-
+            
             // Hide the toast after a delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation(.easeOut(duration: 0.5)) {
@@ -220,7 +228,7 @@ struct ContentView: View {
             }
         }
     }
-
+    
     
     func resizeImage(image: UIImage, targetHeight: CGFloat) -> UIImage {
         let size = image.size
@@ -228,15 +236,15 @@ struct ContentView: View {
         let newWidth = size.width * heightRatio
         let newSize = CGSize(width: newWidth, height: targetHeight)
         let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
-
+        
         UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
         image.draw(in: rect)
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-
+        
         return newImage ?? image
     }
-
+    
 }
 
 struct ContentView_Previews: PreviewProvider {

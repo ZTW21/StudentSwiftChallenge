@@ -20,7 +20,7 @@ let package = Package(
             teamIdentifier: "3ZWQ27S93Y",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .note),
+            appIcon: .asset("AppIcon"),
             accentColor: .presetColor(.yellow),
             supportedDeviceFamilies: [
                 .pad,
@@ -31,7 +31,11 @@ let package = Package(
                 .landscapeRight,
                 .landscapeLeft,
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
-            ]
+            ],
+            capabilities: [
+                .camera(purposeString: "This app requires access to the camera to allow users to take photos for color analysis.")
+            ],
+            appCategory: .graphicsDesign
         )
     ],
     targets: [

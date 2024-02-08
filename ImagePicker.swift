@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct ImagePicker: UIViewControllerRepresentable {
-    @Binding var selectedImage: UIImage
+    @Binding var selectedImage: UIImage?
+    var sourceType: UIImagePickerController.SourceType
     @Environment(\.presentationMode) private var presentationMode
-    var sourceType: UIImagePickerController.SourceType = .photoLibrary
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let imagePicker = UIImagePickerController()
@@ -25,7 +25,7 @@ struct ImagePicker: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-
+    
     final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         var parent: ImagePicker
 
