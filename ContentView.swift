@@ -38,8 +38,6 @@ struct ContentView: View {
                 }
                 .padding(.bottom)
                 
-                
-                
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) { // Increased spacing between squares
                     ForEach(0..<9, id: \.self) { index in
                         Rectangle()
@@ -194,10 +192,35 @@ struct ContentView: View {
         UIPasteboard.general.string = hexString
     }
     
+//    func showToast(message: String) {
+//        toastMessage = message
+//        showingToast = true
+//    }
+    
     func showToast(message: String) {
+        // Reset the toast state to allow it to be triggered again
+        withAnimation {
+            showingToast = false
+            opacity = 0
+        }
+
+        // Update the message and make the toast visible
         toastMessage = message
-        showingToast = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation {
+                showingToast = true
+                opacity = 1
+            }
+
+            // Hide the toast after a delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    opacity = 0
+                }
+            }
+        }
     }
+
     
     func resizeImage(image: UIImage, targetHeight: CGFloat) -> UIImage {
         let size = image.size
