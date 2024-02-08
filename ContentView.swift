@@ -8,7 +8,7 @@ struct ContentView: View {
     @State private var showingToast = false
     @State private var toastMessage = ""
     @State private var opacity: Double = 0
-
+    
     @State private var lastCopiedColor: SwiftUI.Color = SwiftUI.Color.gray
     
     var body: some View {
@@ -53,6 +53,14 @@ struct ContentView: View {
                                 lastCopiedColor = copiedColor
                                 showToast(message: "Color copied to clipboard")
                             }
+                            // Check if the current square is one of the corners
+                            .overlay(
+                                index == 0 || index == 2 || index == 6 || index == 8 ?
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(lineWidth: 1)
+                                    .foregroundColor(SwiftUI.Color.yellow)
+                                : nil
+                            )
                     }
                 }
                 .padding() // Padding around the entire grid
@@ -96,21 +104,24 @@ struct ContentView: View {
     
     func loadImage() {
         guard let inputImage = inputImage else { return }
+        
+        let compressedImage = resizeImage(image: inputImage, targetHeight: 200)
+        
         image = Image(uiImage: inputImage)
         
         DispatchQueue.global(qos: .userInitiated).async {
             // Use the median cut algorithm to extract dominant colors from the image
-            let dominantColors = self.dominantColorsFromImage(image: inputImage, colorCount: 4)
+            let dominantColors = self.dominantColorsFromImage(image: compressedImage, colorCount: 4)
             print(dominantColors)
             
             DispatchQueue.main.async {
                 if dominantColors.count >= 4 {
-                    // Update the palette colors with the new dominant colors
-                    for i in 0..<4 {
-                        self.paletteColors[i * 2] = SwiftUI.Color(dominantColors[i])
-                    }
+                    self.paletteColors[0] = SwiftUI.Color(dominantColors[0]) // Top left corner
+                    self.paletteColors[2] = SwiftUI.Color(dominantColors[1]) // Top right corner
+                    self.paletteColors[6] = SwiftUI.Color(dominantColors[2]) // Bottom left corner
+                    self.paletteColors[8] = SwiftUI.Color(dominantColors[3]) // Bottom right corner
                     
-                    // Optionally, blend colors for the remaining palette slots as you did before
+                    // Blend colors for the remaining palette slots
                     self.paletteColors[1] = SwiftUI.Color(self.blendColors(dominantColors[0], dominantColors[1])) // Top edge
                     self.paletteColors[3] = SwiftUI.Color(self.blendColors(dominantColors[0], dominantColors[2])) // Left edge
                     self.paletteColors[5] = SwiftUI.Color(self.blendColors(dominantColors[1], dominantColors[3])) // Right edge
@@ -133,16 +144,16 @@ struct ContentView: View {
     func dominantColorsFromImage(image: UIImage, colorCount: Int) -> [UIColor] {
         guard let inputPixels = image.pixelData() else { return [] }
         var colors = [Color]()
-
+        
         for i in 0..<inputPixels.count where i % 4 == 0 {
             let r = inputPixels[i]
             let g = inputPixels[i + 1]
             let b = inputPixels[i + 2]
             colors.append(Color(r: r, g: g, b: b))
         }
-
+        
         var colorBoxes = [ColorBox(colors: colors)]
-
+        
         while colorBoxes.count < colorCount {
             colorBoxes.sort { $0.count > $1.count }
             guard let largestBox = colorBoxes.first else { break }
@@ -150,7 +161,7 @@ struct ContentView: View {
             colorBoxes.removeFirst()
             colorBoxes.append(contentsOf: [box1, box2])
         }
-
+        
         let dominantColors = colorBoxes.map { box -> UIColor in
             let averageColor = box.averageColor()
             return UIColor(red: CGFloat(averageColor.r) / 255.0,
@@ -158,7 +169,7 @@ struct ContentView: View {
                            blue: CGFloat(averageColor.b) / 255.0,
                            alpha: 1.0)
         }
-
+        
         return dominantColors
     }
     
@@ -188,6 +199,21 @@ struct ContentView: View {
         showingToast = true
     }
     
+    func resizeImage(image: UIImage, targetHeight: CGFloat) -> UIImage {
+        let size = image.size
+        let heightRatio = targetHeight / size.height
+        let newWidth = size.width * heightRatio
+        let newSize = CGSize(width: newWidth, height: targetHeight)
+        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: rect)
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return newImage ?? image
+    }
+
 }
 
 struct ContentView_Previews: PreviewProvider {
