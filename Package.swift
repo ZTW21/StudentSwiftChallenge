@@ -33,7 +33,9 @@ let package = Package(
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
-                .camera(purposeString: "This app requires access to the camera to allow users to take photos for color analysis.")
+                .camera(purposeString: "This app requires access to the camera to allow users to take photos for color analysis."),
+                .photoLibrary(purposeString: "This app requires access to your photo library to select images for color analysis."),
+                .photoLibraryAdd(purposeString: "This app needs to save color-analyzed images to your photo library.")
             ],
             appCategory: .graphicsDesign
         )

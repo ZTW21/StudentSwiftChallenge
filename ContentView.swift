@@ -10,35 +10,54 @@ struct ContentView: View {
     @State private var showingToast = false
     @State private var toastMessage = ""
     @State private var opacity: Double = 0
+    @State private var paletteGenerated = false;
+    @State private var showingShareSheet = false
+    @State private var itemsToShare: [Any] = []
+
     
     @State private var lastCopiedColor: SwiftUI.Color = SwiftUI.Color.gray
     
     var body: some View {
         ZStack {
             VStack {
-                Button(action: {
-                    self.showingActionSheet = true // Show action sheet when button is tapped
-                }) {
-                    Text("Select Image")
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(SwiftUI.Color.blue)
-                        .clipShape(Capsule())
+                HStack {
+                    Button(action: {
+                        self.showingActionSheet = true // Show action sheet when button is tapped
+                    }) {
+                        Text("Select Image")
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(SwiftUI.Color.blue)
+                            .clipShape(Capsule())
+                    }
+                    .padding()
+                    .actionSheet(isPresented: $showingActionSheet) { // Action sheet
+                        ActionSheet(title: Text("Select Image"), message: Text("Choose the image source"), buttons: [
+                            .default(Text("Camera")) {
+                                self.sourceType = .camera
+                                self.showingImagePicker = true
+                            },
+                            .default(Text("Photo Library")) {
+                                self.sourceType = .photoLibrary
+                                self.showingImagePicker = true
+                            },
+                            .cancel()
+                        ])
+                    }
+                    if (paletteGenerated) {
+                        Button(action: {
+                            shareImage()
+                        }) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.title) // Adjust the size as needed
+                                .foregroundColor(.blue) // Adjust the color as needed
+                        }
+                        .sheet(isPresented: $showingShareSheet) {
+                            ShareSheet(itemsToShare: itemsToShare)
+                        }
+                    }
                 }
-                .padding()
-                .actionSheet(isPresented: $showingActionSheet) { // Action sheet
-                    ActionSheet(title: Text("Select Image"), message: Text("Choose the image source"), buttons: [
-                        .default(Text("Camera")) {
-                            self.sourceType = .camera
-                            self.showingImagePicker = true
-                        },
-                        .default(Text("Photo Library")) {
-                            self.sourceType = .photoLibrary
-                            self.showingImagePicker = true
-                        },
-                        .cancel()
-                    ])
-                }
+                
                 
                 ZStack {
                     Rectangle()
@@ -145,6 +164,7 @@ struct ContentView: View {
                     for (index, color) in self.paletteColors.enumerated() {
                         print("Color \(index):", color.description)
                     }
+                    paletteGenerated = true;
                 } else {
                     print("Not enough dominant colors were extracted.")
                 }
@@ -245,6 +265,26 @@ struct ContentView: View {
         return newImage ?? image
     }
     
+    
+    var uiPaletteColors: [UIColor] {
+        paletteColors.map { UIColor($0) }
+    }
+    
+    // Share function that waits for the overlay image
+    func shareImage() {
+        guard let originalImage = self.inputImage else { return }
+        
+        let uiPaletteColors = self.uiPaletteColors
+
+        generateOverlayedImage(with: uiPaletteColors, for: originalImage) { overlayedImage in
+            guard let overlayedImage = overlayedImage else { return }
+            self.itemsToShare = [overlayedImage]
+            DispatchQueue.main.async {
+                self.showingShareSheet = true
+            }
+        }
+    }
+
 }
 
 struct ContentView_Previews: PreviewProvider {
